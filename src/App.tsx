@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import { obtenerTareas, crearTarea, eliminarTarea } from './api/client'
+import { obtenerTareas, crearTarea } from './api/client'
+import DataTable from './components/DataTable'
+import { diasEntreFechas } from './utils/date'
 
 type Tarea = {
   id: number
@@ -10,6 +12,7 @@ type Tarea = {
 function App() {
   const [tareas, setTareas] = useState<Tarea[]>([])
   const [nuevoTitulo, setNuevoTitulo] = useState<string>('')
+  const [edicion, setEdicion] = useState<Partial<Tarea> | null>(null)
 
   useEffect(() => {
     async function cargarTareas() {
@@ -19,6 +22,9 @@ function App() {
 
     cargarTareas()
   }, [])
+
+  const manana = new Date()
+  manana.setDate(manana.getDate() + 1)
 
   return (
     <div>
@@ -46,24 +52,40 @@ function App() {
         Añadir tarea
       </button>
 
-      <ul>
-        {tareas.map((tarea) => (
-          <li key={tarea.id}>
-            {tarea.titulo}
+      <DataTable
+        data={tareas}
+        columns={[
+          { key: 'id', label: 'ID' },
+          { key: 'titulo', label: 'Título' }
+        ]}
+      />
 
-            <button
-              onClick={async () => {
-                await eliminarTarea(tarea.id)
+      <button
+        onClick={() => {
+          if (tareas.length > 0) {
+            setEdicion({ ...tareas[0] })
+          }
+        }}
+      >
+        Editar primera tarea
+      </button>
 
-                const data = await obtenerTareas()
-                setTareas(data.datos || [])
-              }}
-            >
-              ❌
-            </button>
-          </li>
-        ))}
-      </ul>
+      {edicion && (
+        <div>
+          <h3>Editando:</h3>
+          <input
+            value={edicion.titulo || ''}
+            onChange={(e) =>
+              setEdicion({ ...edicion, titulo: e.target.value })
+            }
+          />
+        </div>
+      )}
+
+      <p>
+        Días entre hoy y mañana:{' '}
+        {diasEntreFechas(new Date(), manana)}
+      </p>
     </div>
   )
 }
